@@ -1,84 +1,58 @@
-// Heapify function
 async function heapify(ele, n, i) {
-    let largest = i;
-    let l = 2 * i + 1;
-    let r = 2 * i + 2;
+  let largest = i;
+  const l = 2 * i + 1;
+  const r = 2 * i + 2;
 
-    // highlight current node in orange
-    ele[i].style.background = "orange";
-    if (l < n) ele[l].style.background = "blue";
-    if (r < n) ele[r].style.background = "blue";
+  if (l < n) {
+    comparisons++;
+    updateCounter();
+    if (parseInt(ele[l].style.height) > parseInt(ele[largest].style.height)) {
+      largest = l;
+    }
+  }
+
+  if (r < n) {
+    comparisons++;
+    updateCounter();
+    if (parseInt(ele[r].style.height) > parseInt(ele[largest].style.height)) {
+      largest = r;
+    }
+  }
+
+  if (largest !== i) {
+    swap(ele[i], ele[largest]);
     await waitforme(delay);
-
-    // check left child
-    if (l < n && parseInt(ele[l].style.height) > parseInt(ele[largest].style.height)) {
-        largest = l;
-    }
-
-    // check right child
-    if (r < n && parseInt(ele[r].style.height) > parseInt(ele[largest].style.height)) {
-        largest = r;
-    }
-
-    // if largest is not root
-    if (largest !== i) {
-        swap(ele[i], ele[largest]);
-
-        await waitforme(delay);
-
-        // reset colors
-        ele[i].style.background = "orange";
-        ele[largest].style.background = "orange";
-
-        // recursively heapify affected subtree
-        await heapify(ele, n, largest);
-    }
-
-    // reset colors after heapify done
-    ele[i].style.background = "orange";
-    if (l < n) ele[l].style.background = "orange";
-    if (r < n) ele[r].style.background = "orange";
+    await checkPaused();
+    await heapify(ele, n, largest);
+  }
 }
 
-// Heap Sort function
-async function heapSort(ele) {
-    let n = ele.length;
+async function heapSortMain() {
+  showInfo("Heap Sort", "O(n log n)", "O(1)", "No");
+  const ele = document.querySelectorAll(".bar");
+  const n = ele.length;
+  disableSortingBtn();
+  disableSizeSlider();
+  disableNewArrayBtn();
 
-    // Build max heap
-    for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
-        await heapify(ele, n, i);
-    }
+  // build max heap
+  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+    await heapify(ele, n, i);
+  }
 
-    // One by one extract elements
-    for (let i = n - 1; i > 0; i--) {
-        swap(ele[0], ele[i]);
+  // extract elements
+  for (let i = n - 1; i > 0; i--) {
+    swap(ele[0], ele[i]);
+    ele[i].style.background = "green";
+    await waitforme(delay);
+    await checkPaused();
+    await heapify(ele, i, 0);
+  }
+  if (ele.length) ele[0].style.background = "green";
 
-        // mark as sorted
-        ele[i].style.background = "green";
-        await waitforme(delay);
-
-        await heapify(ele, i, 0);
-    }
-
-    // mark last element as sorted
-    ele[0].style.background = "green";
+  enableSortingBtn();
+  enableSizeSlider();
+  enableNewArrayBtn();
 }
 
-// Attach button event
-const heapSortbtn = document.querySelector(".heapSort");
-console.log("Heap Sort button:", heapSortbtn);
-
-heapSortbtn.addEventListener("click", async function () {
-    console.log("Heap Sort button clicked!");
-    let ele = document.querySelectorAll(".bar");
-
-    disableSortingBtn();
-    disableSizeSlider();
-    disableNewArrayBtn();
-
-    await heapSort(ele);
-
-    enableSortingBtn();
-    enableSizeSlider();
-    enableNewArrayBtn();
-});
+document.querySelector(".heapSort").addEventListener("click", heapSortMain);

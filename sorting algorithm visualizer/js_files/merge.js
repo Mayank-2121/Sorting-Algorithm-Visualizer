@@ -1,121 +1,83 @@
-//let delay = 30;
-async function merge(ele, low, mid, high){
-    console.log('In merge()');
-    console.log(`low=${low}, mid=${mid}, high=${high}`);
-    const n1 = mid - low + 1;
-    const n2 = high - mid;
-    console.log(`n1=${n1}, n2=${n2}`);
-    let left = new Array(n1);
-    let right = new Array(n2);
+async function mergeHelper(ele, l, m, r) {
+  const n1 = m - l + 1;
+  const n2 = r - m;
 
-    for(let i = 0; i < n1; i++){
-        await waitforme(delay);
-        console.log('In merge left loop');
-        console.log(ele[low + i].style.height + ' at ' + (low+i));
-        // color
-        ele[low + i].style.background = 'orange';
-        left[i] = ele[low + i].style.height;
-    }
-    for(let i = 0; i < n2; i++){
-        await waitforme(delay);
-        console.log('In merge right loop');
-        console.log(ele[mid + 1 + i].style.height + ' at ' + (mid+1+i));
-        // color
-        ele[mid + 1 + i].style.background = 'yellow';
-        right[i] = ele[mid + 1 + i].style.height;
-    }
+  const Lh = [], Ltxt = [];
+  const Rh = [], Rtxt = [];
+
+  for (let i = 0; i < n1; i++) {
+    Lh.push(ele[l + i].style.height);
+    Ltxt.push(ele[l + i].innerText);
+  }
+  for (let j = 0; j < n2; j++) {
+    Rh.push(ele[m + 1 + j].style.height);
+    Rtxt.push(ele[m + 1 + j].innerText);
+  }
+
+  let i = 0, j = 0, k = l;
+  while (i < n1 && j < n2) {
+    comparisons++;
+    updateCounter();
+    ele[k].style.background = "blue";
     await waitforme(delay);
-    let i = 0, j = 0, k = low;
-    while(i < n1 && j < n2){
-        await waitforme(delay);
-        console.log('In merge while loop');
-        console.log(parseInt(left[i]), parseInt(right[j]));
-        
-        // To add color for which two r being compared for merging
-        
-        if(parseInt(left[i]) <= parseInt(right[j])){
-            console.log('In merge while loop if');
-            // color
-            if((n1 + n2) === ele.length){
-                ele[k].style.background = 'green';
-            }
-            else{
-                ele[k].style.background = 'lightgreen';
-            }
-            
-            ele[k].style.height = left[i];
-            i++;
-            k++;
-        }
-        else{
-            console.log('In merge while loop else');
-            // color
-            if((n1 + n2) === ele.length){
-                ele[k].style.background = 'green';
-            }
-            else{
-                ele[k].style.background = 'lightgreen';
-            } 
-            ele[k].style.height = right[j];
-            j++;
-            k++;
-        }
+    await checkPaused();
+
+
+    if (parseInt(Lh[i]) <= parseInt(Rh[j])) {
+      ele[k].style.height = Lh[i];
+      ele[k].innerText = Ltxt[i];
+      i++;
+    } else {
+      ele[k].style.height = Rh[j];
+      ele[k].innerText = Rtxt[j];
+      swaps++;
+      updateCounter();
+      j++;
     }
-    while(i < n1){
-        await waitforme(delay);
-        console.log("In while if n1 is left");
-        // color
-        if((n1 + n2) === ele.length){
-            ele[k].style.background = 'green';
-        }
-        else{
-            ele[k].style.background = 'lightgreen';
-        }
-        ele[k].style.height = left[i];
-        i++;
-        k++;
-    }
-    while(j < n2){
-        await waitforme(delay);
-        console.log("In while if n2 is left");
-        // color
-        if((n1 + n2) === ele.length){
-            ele[k].style.background = 'green';
-        }
-        else{
-            ele[k].style.background = 'lightgreen';
-        }
-        ele[k].style.height = right[j];
-        j++;
-        k++;
-    }
+
+    ele[k].style.background = "green";
+    k++;
+  }
+
+  while (i < n1) {
+    ele[k].style.height = Lh[i];
+    ele[k].innerText = Ltxt[i];
+    ele[k].style.background = "green";
+    i++; k++;
+    await waitforme(delay / 2);
+    await checkPaused();
+  }
+
+  while (j < n2) {
+    ele[k].style.height = Rh[j];
+    ele[k].innerText = Rtxt[j];
+    ele[k].style.background = "green";
+    j++; k++;
+    await waitforme(delay / 2);
+    await checkPaused();
+  }
 }
 
-async function mergeSort(ele, l, r){
-    console.log('In mergeSort()');
-    if(l >= r){
-        console.log(`return cause just 1 elemment l=${l}, r=${r}`);
-        return;
-    }
-    const m = l + Math.floor((r - l) / 2);
-    console.log(`left=${l} mid=${m} right=${r}`, typeof(m));
-    await mergeSort(ele, l, m);
-    await mergeSort(ele, m + 1, r);
-    await merge(ele, l, m, r);
+async function mergeSortRecursive(ele, l, r) {
+  if (l >= r) return;
+  const m = l + Math.floor((r - l) / 2);
+  await mergeSortRecursive(ele, l, m);
+  await mergeSortRecursive(ele, m + 1, r);
+  await mergeHelper(ele, l, m, r);
 }
 
-const mergeSortbtn = document.querySelector(".mergeSort");
-mergeSortbtn.addEventListener('click', async function(){
-    let ele = document.querySelectorAll('.bar');
-    let l = 0;
-    let r = parseInt(ele.length) - 1;
-    disableSortingBtn();
-    disableSizeSlider();
-    disableNewArrayBtn();
-    await mergeSort(ele, l, r);
-    enableSortingBtn();
-    enableSizeSlider();
-    enableNewArrayBtn();
-});
+async function mergeSort() {
+  showInfo("Merge Sort", "O(n log n)", "O(n)", "Yes");
+  const ele = document.querySelectorAll(".bar");
+  disableSortingBtn();
+  disableSizeSlider();
+  disableNewArrayBtn();
 
+  await mergeSortRecursive(ele, 0, ele.length - 1);
 
+  enableSortingBtn();
+  enableSizeSlider();
+  enableNewArrayBtn();
+}
+
+document.querySelector(".mergeSort").addEventListener("click", mergeSort);

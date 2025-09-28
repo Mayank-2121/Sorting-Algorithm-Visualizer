@@ -1,32 +1,38 @@
-async function bubble() {
-    console.log('In bubbe()');
-    const ele = document.querySelectorAll(".bar");
-    for(let i = 0; i < ele.length-1; i++){
-        console.log('In ith loop');
-        for(let j = 0; j < ele.length-i-1; j++){
-            console.log('In jth loop');
-            ele[j].style.background = 'blue';
-            ele[j+1].style.background = 'blue';
-            if(parseInt(ele[j].style.height) > parseInt(ele[j+1].style.height)){
-                console.log('In if condition');
-                await waitforme(delay);
-                swap(ele[j], ele[j+1]);
-            }
-            ele[j].style.background = 'cyan';
-            ele[j+1].style.background = 'cyan';
-        }
-        ele[ele.length-1-i].style.background = 'green';
+async function bubbleSort() {
+  showInfo("Bubble Sort", "O(n²)", "O(1)", "Yes");
+  const bars = document.querySelectorAll(".bar");
+  const n = bars.length;
+  disableSortingBtn();
+  disableSizeSlider();
+  disableNewArrayBtn();
+
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = 0; j < n - i - 1; j++) {
+      comparisons++;
+      updateCounter();
+      bars[j].style.background = "blue";
+      bars[j + 1].style.background = "blue";
+
+      await waitforme(delay);
+      await checkPaused();
+
+
+      const h1 = parseInt(bars[j].style.height);
+      const h2 = parseInt(bars[j + 1].style.height);
+      if (h1 > h2) {
+        swap(bars[j], bars[j + 1]);
+      }
+
+      bars[j].style.background = "cyan";
+      bars[j + 1].style.background = "cyan";
     }
-    ele[0].style.background = 'green';
+    bars[n - 1 - i].style.background = "green";
+  }
+  if (bars.length) bars[0].style.background = "green";
+
+  enableSortingBtn();
+  enableSizeSlider();
+  enableNewArrayBtn();
 }
 
-const bubSortbtn = document.querySelector(".bubbleSort");
-bubSortbtn.addEventListener('click', async function(){
-    disableSortingBtn();
-    disableSizeSlider();
-    disableNewArrayBtn();
-    await bubble();
-    enableSortingBtn();
-    enableSizeSlider();
-    enableNewArrayBtn();
-});
+document.querySelector(".bubbleSort").addEventListener("click", bubbleSort);

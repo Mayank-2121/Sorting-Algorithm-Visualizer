@@ -1,126 +1,156 @@
-// swap function util for sorting algorithms takes input of 2 DOM elements with .style.height feature
+/* sorting.js
+   - core utilities, array generation, counters, UI enabling/disabling
+   - must be loaded BEFORE algorithm files
+*/
+
+let delay = 80;              // will be set from speed slider
+let comparisons = 0;
+let swaps = 0;
+
+function waitforme(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function updateCounter() {
+  const c = document.getElementById("counter");
+  if (c) c.innerText = `Comparisons: ${comparisons} | Swaps: ${swaps}`;
+}
+
+function resetCounter() {
+  comparisons = 0;
+  swaps = 0;
+  updateCounter();
+}
+
+function showInfo(name, time, space, stable) {
+  const algo = document.getElementById("algoName");
+  const comp = document.getElementById("complexity");
+  const stab = document.getElementById("stability");
+  if (algo) algo.innerText = `Algorithm: ${name}`;
+  if (comp) comp.innerText = `Time: ${time}`;
+  if (stab) stab.innerText = `Space: ${space} | Stable: ${stable}`;
+  resetCounter();
+}
+
+/* swap heights and innerText of two bar elements (counts as a swap) */
 function swap(el1, el2) {
-    console.log('In swap()');
-    
-    let temp = el1.style.height;
-    el1.style.height = el2.style.height;
-    el2.style.height = temp;
-    
+  if (!el1 || !el2) return;
+  swaps++;
+  const h1 = el1.style.height;
+  const t1 = el1.innerText;
+  el1.style.height = el2.style.height;
+  el1.innerText = el2.innerText;
+  el2.style.height = h1;
+  el2.innerText = t1;
+  updateCounter();
 }
 
-// Disables sorting buttons used in conjunction with enable, so that we can disable during sorting and enable buttons after it
-function disableSortingBtn(){
-    document.querySelector(".bubbleSort").disabled = true;
-    document.querySelector(".insertionSort").disabled = true;
-    document.querySelector(".mergeSort").disabled = true;
-    document.querySelector(".quickSort").disabled = true;
-    document.querySelector(".selectionSort").disabled = true;
-    document.querySelector(".heapSort").disabled = true;
+/* UI control helpers */
+function disableSortingBtn() {
+  document.querySelectorAll(".sortBtn").forEach(b => b.disabled = true);
+}
+function enableSortingBtn() {
+  document.querySelectorAll(".sortBtn").forEach(b => b.disabled = false);
+}
+function disableSizeSlider() { document.getElementById("arr_sz").disabled = true; }
+function enableSizeSlider() { document.getElementById("arr_sz").disabled = false; }
+function disableNewArrayBtn() { document.querySelector(".newArray").disabled = true; document.querySelector(".copyArray").disabled = true; }
+function enableNewArrayBtn() { document.querySelector(".newArray").disabled = false; document.querySelector(".copyArray").disabled = false; }
+
+/* create and render a new random array */
+function createNewArray(size = 60) {
+  const container = document.getElementById("bars");
+  container.innerHTML = "";
+  resetCounter();
+
+  // clamp size
+  size = Math.max(5, Math.min(140, size));
+
+  // create elements
+  for (let i = 0; i < size; i++) {
+    const val = Math.floor(Math.random() * 380) + 20; // 20 .. 399 px
+    const bar = document.createElement("div");
+    bar.classList.add("bar");
+    bar.style.height = `${val}px`;
+    bar.style.width = `${(100 / size).toFixed(2)}%`;
+    bar.style.background = "cyan";
+    bar.style.border = "1px solid #000";
+    bar.innerText = val;
+    container.appendChild(bar);
+  }
 }
 
-// Enables sorting buttons used in conjunction with disable
-function enableSortingBtn(){
-    document.querySelector(".bubbleSort").disabled = false;
-    document.querySelector(".insertionSort").disabled = false;
-    document.querySelector(".mergeSort").disabled = false;
-    document.querySelector(".quickSort").disabled = false;
-    document.querySelector(".selectionSort").disabled = false;
-     document.querySelector(".heapSort").disabled = false;
+/* copy current array values to clipboard */
+async function copyArrayToClipboard() {
+  const bars = document.querySelectorAll(".bar");
+  const arr = Array.from(bars).map(b => parseInt(b.innerText));
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(arr));
+    alert("Array copied to clipboard");
+  } catch (e) {
+    alert("Copy failed: " + e);
+  }
 }
 
-// Disables size slider used in conjunction with enable, so that we can disable during sorting and enable buttons after it
-function disableSizeSlider(){
-    document.querySelector("#arr_sz").disabled = true;
-}
+/* init handlers after DOM loads */
+window.addEventListener("load", function () {
+  const sizeSlider = document.getElementById("arr_sz");
+  const speedSlider = document.getElementById("speed_input");
+  const newArrayBtn = document.querySelector(".newArray");
+  const copyBtn = document.querySelector(".copyArray");
 
-// Enables size slider used in conjunction with disable
-function enableSizeSlider(){
-    document.querySelector("#arr_sz").disabled = false;
-}
+  // set delay from speed slider (higher slider -> faster -> smaller delay)
+  const setDelayFromSpeed = () => {
+    const v = parseInt(speedSlider.value);
+    delay = Math.max(5, 350 - v); // when speed=300 -> delay=50; adjust as desired
+  };
+  setDelayFromSpeed();
 
-// Disables newArray buttons used in conjunction with enable, so that we can disable during sorting and enable buttons after it
-function disableNewArrayBtn(){
-    document.querySelector(".newArray").disabled = true;
-}
+  // initial array
+  createNewArray(parseInt(sizeSlider.value || 60));
 
-// Enables newArray buttons used in conjunction with disable
-function enableNewArrayBtn(){
-    document.querySelector(".newArray").disabled = false;
-}
+  // listeners
+  sizeSlider.addEventListener("input", function () {
+    createNewArray(parseInt(this.value));
+  });
 
-// Used in async function so that we can so animations of sorting, takes input time in ms (1000 = 1s)
-function waitforme(milisec) { 
-    return new Promise(resolve => { 
-        setTimeout(() => { resolve('') }, milisec); 
-    }) 
-}
+  speedSlider.addEventListener("input", function () {
+    setDelayFromSpeed();
+  });
 
-// Selecting size slider from DOM
-let arraySize = document.querySelector('#arr_sz');
+  newArrayBtn.addEventListener("click", function () {
+    createNewArray(parseInt(sizeSlider.value));
+  });
 
-// Event listener to update the bars on the UI
-arraySize.addEventListener('input', function(){
-    console.log(arraySize.value, typeof(arraySize.value));
-    createNewArray(parseInt(arraySize.value));
+  copyBtn.addEventListener("click", function () {
+    copyArrayToClipboard();
+  });
+
+  updateCounter();
 });
 
-// Default input for waitforme function (260ms)
-let delay = 260;
 
-// Selecting speed slider from DOM
-let delayElement = document.querySelector('#speed_input');
+//Set Pause And Resume Sorting
+let isPaused = false;
 
-// Event listener to update delay time 
-delayElement.addEventListener('input', function(){
-    console.log(delayElement.value, typeof(delayElement.value));
-    delay = 320 - parseInt(delayElement.value);
-});
-
-// Creating array to store randomly generated numbers
-let array = [];
-
-// Call to display bars right when you visit the site
-createNewArray();
-
-// To create new array input size of array
-function createNewArray(noOfBars = 60) {
-    // calling helper function to delete old bars from dom
-    deleteChild();
-
-    // creating an array of random numbers 
-    array = [];
-    for (let i = 0; i < noOfBars; i++) {
-        array.push(Math.floor(Math.random() * 250) + 1);
-    }
-    console.log(array);
-
-    // select the div #bars element
-    const bars = document.querySelector("#bars");
-
-    // create multiple element div using loop and adding class 'bar col'
-    for (let i = 0; i < noOfBars; i++) {
-        const bar = document.createElement("div");
-        bar.style.height = `${array[i]*2}px`;
-        bar.classList.add('bar');
-        bar.classList.add('flex-item');
-        bar.classList.add(`barNo${i}`);
-        bar.textContent=array[i];
-        bars.appendChild(bar);
-    }
+function togglePause() {
+  isPaused = !isPaused;
+  const btn = document.getElementById("pauseBtn");
+  if (isPaused) {
+    btn.innerText = "Resume";
+  } else {
+    btn.innerText = "Pause";
+  }
 }
 
-// Helper function to delete all the previous bars so that new can be added
-function deleteChild() {
-    const bar = document.querySelector("#bars");
-    bar.innerHTML = '';
+async function checkPaused() {
+  while (isPaused) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
 }
 
-// Selecting newarray button from DOM and adding eventlistener
-const newArray = document.querySelector(".newArray");
-newArray.addEventListener("click", function(){
-    console.log("From newArray " + arraySize.value);
-    console.log("From newArray " + delay);
-    enableSortingBtn();
-    enableSizeSlider();
-    createNewArray(arraySize.value);
+document.addEventListener("DOMContentLoaded", () => {
+  const pauseBtn = document.getElementById("pauseBtn");
+  pauseBtn.addEventListener("click", togglePause);
 });
+
